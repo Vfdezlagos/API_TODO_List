@@ -3,35 +3,7 @@ import userModel from '../models/User.js';
 import validate from '../helpers/validate.js';
 import bcrypt from 'bcrypt';
 import * as jwt from '../helpers/jwt.js';
-import nodemailer from 'nodemailer';
-import config from '../config.js';
-
-// // Configuracion del nodemailer
-// const transporter = nodemailer.createTransport({
-//     host: config.LocalUrl,
-//     port: 465,
-//     secure: true,
-//     auth: {
-//       user: config.EMAIL,
-//       pass: config.EMAIL_pass,
-//     },
-// });
-
-// const mailOptions = async (user, token) => {
-//     // send mail with defined transport object
-//     const info = {
-//         from: `"vicefedezdev" <${config.EMAIL}>`, // sender address
-//         to: user.email, // list of receivers
-//         subject: "Password Change", // Subject line
-//         text: "Your password recovery url:", // plain text body
-//         // html: `<u href='http://127.0.0.1:3000/api/user/updatePass/${token}'></u>`, // html body
-//     };
-
-//     console.log("Message sent: %s", info.messageId);
-//     // Message sent: <d786aa62-4e0a-070a-47ed-0b0666549519@ethereal.email>
-
-//     return info;
-// }
+import sendEmail from '../helpers/mailer.js';
 
 
 
@@ -250,55 +222,64 @@ const deleteUser = (req, res) => {
         });
 }
 
-// const passwordRecovery = async (req, res) => {
+const passwordRecovery = async (req, res) => {
 
-//     if(!req.body.username || req.body.username.lenght == 0) return res.status(400).send({
-//         status: 'Error',
-//         message: 'Debe indicar el username o email de la cuenta'
-//     });
+    if(!req.body.username || req.body.username.lenght == 0) return res.status(400).send({
+        status: 'Error',
+        message: 'Debe indicar el username o email de la cuenta'
+    });
 
-//     // Obtener datos del body
-//     let data = req.body.username;
+    // Obtener datos del body
+    let data = req.body.username;
 
-//     // hacer un findOne
-//     userModel.findOne({$or:[{username: data}, {email: data}]}).exec()
-//         .then(user => {
-//             if(!user || user.length == 0) return res.status(404).send({
-//                 status: 'Error',
-//                 message: 'Usuario no encontrado'
-//             });
+    // hacer un findOne
+    userModel.findOne({$or:[{username: data}, {email: data}]}).exec()
+        .then(async user => {
+            if(!user || user.length == 0) return res.status(404).send({
+                status: 'Error',
+                message: 'Usuario no encontrado'
+            });
 
-//             // Si el usuario existe, crear token
-//             let token = jwt.createToken(user);
+            // Si el usuario existe, crear token
+            let token = jwt.createMailerToken(user);
 
-//             // enviar mail con url y token en get
-//             try {
-//                 transporter.sendMail(mailOptions(user, token), (error, info) => {
-//                     if(error || !info) return res.status(500).send({
-//                         status: 'Error',
-//                         message: 'Error al enviar el mail'
-//                     });
-                    
-//                     return res.status(200).send({
-//                         status: 'Success',
-//                         message: 'Mail enviado con exito',
-//                         user,
-//                         token
-//                     });
-//                 });
-//             } catch (error) {
-//                 console.log('no se pudo enviar el mail'),
-//                 console.log(error)
-//             }
+            // enviar mail con url y token en get
+            try {
+                const sendOptions = {
+                    to: user.email,
+                    subject: 'Recuperación de contraseña',
+                    html: `
+                        <h1>Recuperación de contraseña</h1><br/><br/>
+                        <h2>Dale click al siguiente enlace para cambiar tu contraseña</h2><br/><br/>
+                        <a href="http://127.0.0.1:3000/api/user/passwordChange/${token}">Cambiar contraseña</a><br/><br/>
+                        <p>El enlace será valido solo por un dia</p>
+                    `
+                }
 
-//         })
-//         .catch(error => {
-//             return res.status(500).send({
-//                 status: 'Error',
-//                 message: 'Error al intentar buscar al usuario'
-//             });
-//         });
-// }
+                await sendEmail(sendOptions);
+
+                return res.status(200).send({
+                    status: 'Success',
+                    message: 'Email de recuperación enviado con exito',
+                    user
+                });
+
+            } catch (error) {
+                return res.status(500).send({
+                    status: 'Error',
+                    message: 'No se pudo enviar el email',
+                    error
+                });
+            }
+
+        })
+        .catch(error => {
+            return res.status(500).send({
+                status: 'Error',
+                message: 'Error al intentar buscar al usuario'
+            });
+        });
+}
 
 
 // funcionalidades admin
@@ -310,4 +291,5 @@ export {
     login,
     update,
     deleteUser,
+    passwordRecovery
 }

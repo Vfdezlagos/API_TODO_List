@@ -3,7 +3,7 @@ import config from "../config.js";
 
 const connection = async() => {
     try{
-        await mongoose.connect(config.LocalUrl);
+        await mongoose.connect(config.DBUrl);
         console.log('Database TODO-list-api Connected!');
     }catch(exception){
         console.log(exception)

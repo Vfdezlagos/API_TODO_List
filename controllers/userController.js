@@ -128,7 +128,7 @@ const login = (req, res) => {
                 // devolver respuesta con el token
                 return res.status(200).send({
                     status: 'Success',
-                    message: 'Usuario logeado corrctamente',
+                    message: 'Usuario logeado correctamente',
                     userLogged,
                     token
                 });

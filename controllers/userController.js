@@ -281,6 +281,63 @@ const passwordRecovery = async (req, res) => {
         });
 }
 
+const passwordChange = async (req, res) => {
+    // recibir id del usuario identificado
+    let userId = req.user.id;
+
+    // recibir datos del body
+    const bodyData = req.body;
+
+    // verificar que recibe la contraseña y la confirmacion de esta y que son iguales
+    if(!bodyData.password || bodyData.password.length == 0 || !bodyData.passConfirmation || bodyData.passConfirmation.length == 0) return res.status(400).send({
+        status: 'Error',
+        message: 'Faltan datos por enviar'
+    });
+
+    if(bodyData.password !== bodyData.passConfirmation) return res.status(400).send({
+        status: 'Error',
+        message: 'Las contraseñas ingresadas no coinciden'
+    });
+
+    // encriptar nueva pass
+    try {
+        const Encriptedpass = await bcrypt.hash(bodyData.password, 10);
+
+        // findByIdAndUpdate y actualizamos la contraseña
+        await userModel.findByIdAndUpdate(userId, {password: Encriptedpass}, {new: true}).exec()
+            .then(updatedUser => {
+                if(!updatedUser || updatedUser.length == 0) return res.status(404).send({
+                    status: 'Error',
+                    message: 'No se encontró al usuario'
+                });
+
+                return res.status(200).send({
+                    status: 'Success',
+                    message: 'contraseña actualizada con exito',
+                    NewPass: bodyData.password,
+                    user: updatedUser
+                });
+            })
+            .catch(error => {
+                return res.status(500).send({
+                    status: 'Error',
+                    message: 'Error al intentar actualizar al usuario'
+                });
+            });
+
+        // devuelve respuesta con nueva pass
+    } catch (error) {
+        console.log('No se pudo encriptar la contraseña');
+        console.log(error);
+        return res.status(500).send({
+            status: 'Error',
+            message: 'Error al intentar actualizar al usuario'
+        });
+    }
+
+    
+}
+
 
 // funcionalidades admin
 
@@ -291,5 +348,6 @@ export {
     login,
     update,
     deleteUser,
-    passwordRecovery
+    passwordRecovery,
+    passwordChange
 }

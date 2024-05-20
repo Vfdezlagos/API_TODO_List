@@ -14,6 +14,7 @@ userRouter.post('/login', userController.login);
 userRouter.put('/update', auth, userController.update);
 userRouter.delete('/delete', auth, userController.deleteUser);
 userRouter.post('/passwordRecovery', userController.passwordRecovery);
+userRouter.patch('/passwordChange', auth, userController.passwordChange);
 
 
 // Exportar rutas

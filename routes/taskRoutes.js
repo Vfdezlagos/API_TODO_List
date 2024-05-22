@@ -10,6 +10,7 @@ taskRouter.get('/test', taskController.test);
 taskRouter.post('/create', auth, taskController.createTask);
 taskRouter.put('/update/:id?', auth, taskController.update);
 taskRouter.delete('/delete/:id?', auth, taskController.deleteTask);
+taskRouter.delete('/deletebyid/:id?', taskController.deleteTaskById);
 taskRouter.get('/list/:type?', auth, taskController.listUserTasks);
 taskRouter.get('/search', auth, taskController.findTask);
 

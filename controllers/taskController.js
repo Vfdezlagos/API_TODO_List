@@ -26,7 +26,7 @@ const createTask = (req, res) => {
     // validar datos con validate
     if(!validate.Task(bodyData)) return res.status(400).send({
         status: 'Error',
-        message: 'debe incluir al menos el titulo de la tarea (title) y el typo de tarea (type: personal o work)'
+        message: 'debe incluir al menos el titulo de la tarea (title) y el tipo de tarea (type: personal o work)'
     });
 
     bodyData.user = user.id;
@@ -116,6 +116,33 @@ const deleteTask = (req, res) => {
         });
 }
 
+// Accion de eliminar task by id
+const deleteTaskById = (req, res) => {
+    // Obtener id de la task por url
+    const taskId = req.params.id;
+
+    // hacer un findByIdAndUpdate
+    taskModel.findOneAndUpdate({_id: taskId}, {active: false}, {new: true}).exec()
+        .then(deletedTask => {
+            if(!deletedTask || deletedTask.length == 0) return res.status(404).send({
+                status: 'Error',
+                message: 'Tarea no encontrada'
+            });
+
+            return res.status(200).send({
+                status: 'Success',
+                message: 'Tarea Eliminada con exito',
+                deletedTask
+            });
+        })
+        .catch(error => {
+            return res.status(500).send({
+                status: 'Error',
+                message: 'Error al intentar Eliminar la tarea'
+            });
+        });
+}
+
 // Accion de listar tareas
 const listUserTasks = (req, res) => {
 
@@ -128,7 +155,8 @@ const listUserTasks = (req, res) => {
     // crear filtro de busqueda
     const filter = {
         user: userId,
-        type
+        type,
+        active: true
     }
 
     // hacer un find
@@ -197,5 +225,6 @@ export {
     update,
     deleteTask,
     listUserTasks,
-    findTask
+    findTask,
+    deleteTaskById
 }
